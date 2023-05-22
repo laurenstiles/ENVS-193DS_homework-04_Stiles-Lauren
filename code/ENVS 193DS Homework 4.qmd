@@ -56,4 +56,24 @@ Turn off the grid
 dev.off()
 ```
 
-5. The residuals versus fitted plot shows the distributions of residuals and a straight line indicates homoskedasticity, or constant variance of residuals. This plot looks homoskedastic to me. The normal q-q plot shows whether the residuals are normally distributed. Since the points appear to be in a mostly straight line, I would say that the residuals have a normal distribution. The scale-location plot also shows homoskedasticity of variance, but using the square root of the standardized residuals. They are in a somewhat straight line, so they are homoskedastic??? The residuals vs leverage, or the cook's distance plot shows whether outliers are influencing the model estimate. There are some that are labeled as outliers, but not outside the dotted line range?? so it does not appear that there are outliers affecting model predictions. 
+5. The residuals versus fitted plot shows the distributions of residuals and a straight line indicates homoskedasticity, or constant variance of residuals. This plot looks homoskedastic to me since the line is relatively straight and the points look randomly distributed around the line. The normal q-q plot shows whether the residuals are normally distributed. Since the points appear to be in a mostly straight line, I would say that the residuals have a normal distribution. The scale-location plot also shows homoskedasticity of variance, but using the square root of the standardized residuals. They are in a somewhat straight line and the points seem randomly distributed about it, so they are homoskedastic.The residuals vs leverage, or the cook's distance plot shows whether outliers are influencing the model estimate. There are some that are labeled as outliers, but not outside the dotted line range, so it does not appear that there are outliers affecting model predictions. 
+
+6. 
+```{r}
+#run a summary of the model object 
+summary(trout_model)
+```
+7. 
+```{r}
+#make table showing ANOVA table summary 
+trout_model_squares <- anova(trout_model)
+
+
+trout_model_squares_table <- tidy(trout_model_squares) |> 
+                       mutate(p.value = case_when(p.value <0.001 ~ "< 0.001")) |>
+                       flextable() |>  #easiest way to make this into a table 
+                       set_header_labels(df = "Degrees of Freedom", sumsq = "Sum of Squares")
+
+trout_model_squares_table
+```
+
