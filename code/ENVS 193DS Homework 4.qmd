@@ -9,7 +9,7 @@ execute:
 ---
 
 **Problem 1. How does fish length predict fish weight for trout perch (across all sample years)?**
-1. The null hypothesis is that the predictor variable does not predict the response variable, or that the fish length does not predict fish weight for trout perch. The alternative hypothesis is that the the predictor variable does predict the response variable, or that the fish length does predict fish weigh for trout perch. 
+1. The null hypothesis is that the predictor variable does not predict the response variable, or that the fish length does not predict fish weight for trout perch. The alternative hypothesis is that the the predictor variable does predict the response variable, or that the fish length does predict fish weight for trout perch. 
 
 #Read in data and filter for desired variables 
 ```{r}
@@ -30,7 +30,8 @@ fish_dat <- read_csv(here("data/ntl6_v12.csv"))
 trout_dat <- fish_dat |> 
              mutate_all(tolower)|> 
              filter(spname == "troutperch") |> 
-             select(lakeid, year4, spname, length, weight)
+             select(lakeid, year4, spname, length, weight) |> 
+             
 ```
 2. Show missing data 
 a. 
@@ -42,7 +43,7 @@ b. There is a lot of missing data in the weight column (200 values). This could 
 3. Running test 
 ```{r}
 #run linear model looking into relationship between length and weight
-trout_model <- lm(weight ~ length, data = trout_dat )
+trout_model <- lm(weight ~ length, data = trout_dat)
 trout_model
 ```
 4. Visually check test assumptions 
@@ -62,6 +63,8 @@ dev.off()
 ```{r}
 #run a summary of the model object 
 summary(trout_model)
+
+#THIS DOES NOT SEEM RIGHT -- CHECK AGAIN 
 ```
 7. 
 ```{r}
@@ -76,4 +79,4 @@ trout_model_squares_table <- tidy(trout_model_squares) |>
 
 trout_model_squares_table
 ```
-
+8. The ANOVA test is built on the same parametric base as linear regression models, so they have similar math and outputs. The main difference between this table and the summary table is the degrees of freedom. ???
