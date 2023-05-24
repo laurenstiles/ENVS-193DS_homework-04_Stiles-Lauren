@@ -30,7 +30,8 @@ fish_dat <- read_csv(here("data/ntl6_v12.csv"))
 trout_dat <- fish_dat |> 
              mutate_all(tolower)|> 
              filter(spname == "troutperch") |> 
-             select(lakeid, year4, spname, length, weight) |> 
+             dplyr::select(spname, length, weight) |> 
+             mutate_at(2:3, as.numeric)
              
 ```
 2. Show missing data 
@@ -57,14 +58,13 @@ Turn off the grid
 dev.off()
 ```
 
-5. The residuals versus fitted plot shows the distributions of residuals and a straight line indicates homoskedasticity, or constant variance of residuals. This plot looks homoskedastic to me since the line is relatively straight and the points look randomly distributed around the line. The normal q-q plot shows whether the residuals are normally distributed. Since the points appear to be in a mostly straight line, I would say that the residuals have a normal distribution. The scale-location plot also shows homoskedasticity of variance, but using the square root of the standardized residuals. They are in a somewhat straight line and the points seem randomly distributed about it, so they are homoskedastic.The residuals vs leverage, or the cook's distance plot shows whether outliers are influencing the model estimate. There are some that are labeled as outliers, but not outside the dotted line range, so it does not appear that there are outliers affecting model predictions. 
+5. The residuals versus fitted plot shows the distributions of residuals and a straight line indicates homoskedasticity, or constant variance of residuals. This plot looks homoskedastic to me since the line is relatively straight and the points look randomly distributed around the line. The normal q-q plot shows whether the residuals are normally distributed. Since the points appear to be in a mostly straight line, I would say that the residuals have a normal distribution. The scale-location plot also shows homoskedasticity of variance, but using the square root of the standardized residuals. They are in a somewhat straight line and the points seem randomly distributed about it, so they are homoskedastic.The residuals vs leverage, or the cook's distance plot shows whether outliers are influencing the model estimate. There are some that are labeled as outliers, but not outside the dotted line range, so it does not appear that there are outliers affecting model predictions. ??fix this 
 
 6. 
 ```{r}
 #run a summary of the model object 
 summary(trout_model)
 
-#THIS DOES NOT SEEM RIGHT -- CHECK AGAIN 
 ```
 7. 
 ```{r}
@@ -75,8 +75,52 @@ trout_model_squares <- anova(trout_model)
 trout_model_squares_table <- tidy(trout_model_squares) |> 
                        mutate(p.value = case_when(p.value <0.001 ~ "< 0.001")) |>
                        flextable() |>  #easiest way to make this into a table 
-                       set_header_labels(df = "Degrees of Freedom", sumsq = "Sum of Squares")
+                       set_header_labels(df = "Degrees of Freedom", sumsq = "Sum of Squares",                        meansq = "Mean squares", statistic = "F-statistic")
 
 trout_model_squares_table
 ```
-8. The ANOVA test is built on the same parametric base as linear regression models, so they have similar math and outputs. The main difference between this table and the summary table is the degrees of freedom. ???
+8. The ANOVA test is built on the same parametric base as linear regression models, so they have similar math and outputs.The ANOVA highlights some of the summary elements from the model object, giving more details about the test. 
+
+9. Based on our observations, we can expect a 0.2g increase in fish weight as fish length (mm) increases, as shown by the linear model() (F[1,288] = )
+
+
+10. Prediction Visualization
+```{r message = FALSE, warning = FALSE}
+#pulling out predictions
+#terms corresponds to whatever the predictor was in the model 
+predictions <- ggpredict(trout_model, terms = "length")
+
+#plot predictions 
+plot_predictions <- ggplot(data = trout_dat, aes(length, y = weight)) + 
+  #first plot the underlying data 
+  geom_point() + 
+  #plotting model predictions from the predictions object from ggeffects
+  geom_line(data = predictions, aes(x = x, y = predicted), color = "blue", linewidth = 1) + 
+  #plot the confidence interval around model estimates 
+  geom_ribbon(data = predictions, aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high), alpha = 0.2) + 
+#do not use geom_smooth because it does not tell you where the model comes from, what the equation is, standard intervals, ect...
+   labs(x = "Length", 
+        y = "Weight", 
+        title = "Trout Perch Weight Predicted by Length", 
+        caption = "Figure 1. Dots show predicted values for fish weight based on size and the blue line shows the equation from the linear regression run on to test this prediction") +
+  theme_bw() +
+  #change text font
+  theme(text = element_text(family = "Times New Roman"),
+        #change size of plot title 
+        plot.title = element_text(size = 15),
+        #change size and location of plot caption
+        plot.caption = element_text(size = 6.5, hjust = 0),
+        #choose margins of plot 
+        plot.margin = unit(c(1,1,1,1), "cm"),
+        #change axis title size
+        axis.title = element_text(size = 12), 
+        #change axis text size 
+        axis.text = element_text(size = 10),
+        #remove axis ticks 
+        axis.ticks = element_blank())
+        
+  
+
+plot_predictions
+```
+
