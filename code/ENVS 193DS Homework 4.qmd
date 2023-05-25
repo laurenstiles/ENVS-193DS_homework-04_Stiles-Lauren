@@ -1,18 +1,19 @@
 ---
 title: "ENVS 193DS Homework 4"
 author: "Lauren Stiles"
-format: pdf
+format: docx
 editor: visual
 execute: 
-  warning: FALSE
-  message: FALSE 
+  warning: false
+  message: false 
 ---
+link to github [here](https://github.com/laurenstiles/ENVS-193DS_homework-04_Stiles-Lauren)
 
 **Problem 1. How does fish length predict fish weight for trout perch (across all sample years)?**
 1. The null hypothesis is that the predictor variable does not predict the response variable, or that the fish length does not predict fish weight for trout perch. The alternative hypothesis is that the the predictor variable does predict the response variable, or that the fish length does predict fish weight for trout perch. 
 
 #Read in data and filter for desired variables 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 library(tidyverse)
 library(here) 
 library(naniar)
@@ -26,25 +27,47 @@ library(car) #pull out ANOVA tables specifically for linear models
 #read in data 
 fish_dat <- read_csv(here("data/ntl6_v12.csv"))
 
-#filter out troutperch, select the length, weight, sample years 
+#filter out trout perch, select length and weight
 trout_dat <- fish_dat |> 
              mutate_all(tolower)|> 
              filter(spname == "troutperch") |> 
-             dplyr::select(spname, length, weight) |> 
-             mutate_at(2:3, as.numeric)
+             dplyr::select(length, weight) |> 
+             mutate_at(1:2, as.numeric)
              
 ```
 2. Show missing data 
 a. 
-```{r}
-gg_miss_var(trout_dat)
+```{r fig.height = 8, fig.width = 10}
+#create visualization of missing data 
+missing_data <- gg_miss_var(trout_dat) +
+        #add caption
+        labs(caption = "Missing data in weight column might mean that test does not accurately represent how trout length predicts trout weight.") + 
+        theme(#change size of plot title 
+        plot.title = element_text(size = 15),
+        #change size and location of plot caption
+        plot.caption = element_text(size = 9, hjust = 0),
+        #choose margins of plot 
+        plot.margin = unit(c(1,1,1,1), "cm"),
+        #change axis title size
+        axis.title = element_text(size = 12), 
+        #change axis text size 
+        axis.text = element_text(size = 10),
+        #remove axis ticks 
+        axis.ticks = element_blank())
+      
+
+
+missing_data
 ```
-b. There is a lot of missing data in the weight column (200 values). This could impact the results because weight is one of the variables we are interested in. ???
 
 3. Running test 
 ```{r}
-#run linear model looking into relationship between length and weight
-trout_model <- lm(weight ~ length, data = trout_dat)
+#get rid of NAs in weight column to make the model work better...
+trout_subset <- trout_dat|> 
+                drop_na(weight)
+
+#run linear model looking into whether trout length predicts weight
+trout_model <- lm(weight ~ length, data = trout_subset)
 trout_model
 ```
 4. Visually check test assumptions 
@@ -53,12 +76,9 @@ par(mfrow = c(2,2))
 plot(trout_model)
 
 ```
-Turn off the grid
-```{r turning-off-the-grid, results = FALSE}
-dev.off()
-```
 
-5. The residuals versus fitted plot shows the distributions of residuals and a straight line indicates homoskedasticity, or constant variance of residuals. This plot looks homoskedastic to me since the line is relatively straight and the points look randomly distributed around the line. The normal q-q plot shows whether the residuals are normally distributed. Since the points appear to be in a mostly straight line, I would say that the residuals have a normal distribution. The scale-location plot also shows homoskedasticity of variance, but using the square root of the standardized residuals. They are in a somewhat straight line and the points seem randomly distributed about it, so they are homoskedastic.The residuals vs leverage, or the cook's distance plot shows whether outliers are influencing the model estimate. There are some that are labeled as outliers, but not outside the dotted line range, so it does not appear that there are outliers affecting model predictions. ??fix this 
+
+5. The residuals versus fitted plot shows a straight line and distribution of residuals, which indicate homoskedasticity, or constant variance of residuals. This plot does not seem to represent homoskedasticity since the residuals are clumped around the line. The normal q-q plot shows whether the residuals are normally distributed. Since the points appear to be in a mostly straight line, I would say that the residuals have a normal distribution, except for some on either end. The scale-location plot also shows homoskedasticity of variance, but using the square root of the standardized residuals. They are in a somewhat straight line but the points are again clustered about it, so they are heteroskedastic.The residuals vs leverage, or the cook's distance plot shows whether outliers are influencing the model estimate. There are some that are labeled as outliers, but only one outside the dotted line range, so it does not appear that there are outliers significantly affecting model predictions. We can go ahead with the linear regression model, but must keep in mind that the coefficients may not be as accurate compared to a dateset that shows homoskedastic variance.
 
 6. 
 ```{r}
@@ -79,13 +99,13 @@ trout_model_squares_table <- tidy(trout_model_squares) |>
 
 trout_model_squares_table
 ```
-8. The ANOVA test is built on the same parametric base as linear regression models, so they have similar math and outputs.The ANOVA highlights some of the summary elements from the model object, giving more details about the test. 
+8. The ANOVA test is built on the same parametric base as linear regression models, so they have similar math and outputs.The ANOVA highlights some of the summary elements from the model object, giving more details about the test such as sum of squares, mean squares, and the f statistic. 
 
-9. Based on our observations, we can expect a 0.2g increase in fish weight as fish length (mm) increases, as shown by the linear model() (F[1,288] = )
+9. We can reject the null hypothesis that trout length does not influence trout weight since the linear regression model summary resulted in a p-value of <0.001 (significance level = 0.05). Based on our observations, we can expect a 0.2g increase in fish weight as fish length increases by each mm, as shown by the linear model summary. The R2 value of 0.8164 indicates that this model does a decent job of approximating the actual data, but it would be better if it was closer to 1(a perfect fit). 
 
 
 10. Prediction Visualization
-```{r message = FALSE, warning = FALSE}
+```{r message = FALSE, warning = FALSE, fig.height = 8, fig.width = 10}
 #pulling out predictions
 #terms corresponds to whatever the predictor was in the model 
 predictions <- ggpredict(trout_model, terms = "length")
@@ -102,14 +122,13 @@ plot_predictions <- ggplot(data = trout_dat, aes(length, y = weight)) +
    labs(x = "Length", 
         y = "Weight", 
         title = "Trout Perch Weight Predicted by Length", 
-        caption = "Figure 1. Dots show predicted values for fish weight based on size and the blue line shows the equation from the linear regression run on to test this prediction") +
+        caption = "Figure 2. Dots show predicted values for fish weight based on size and the blue line shows the equation from the linear regression run on to test this prediction.") +
   theme_bw() +
   #change text font
-  theme(text = element_text(family = "Times New Roman"),
-        #change size of plot title 
+  theme(#change size of plot title 
         plot.title = element_text(size = 15),
         #change size and location of plot caption
-        plot.caption = element_text(size = 6.5, hjust = 0),
+        plot.caption = element_text(size = 9, hjust = 0),
         #choose margins of plot 
         plot.margin = unit(c(1,1,1,1), "cm"),
         #change axis title size
@@ -118,8 +137,7 @@ plot_predictions <- ggplot(data = trout_dat, aes(length, y = weight)) +
         axis.text = element_text(size = 10),
         #remove axis ticks 
         axis.ticks = element_blank())
-        
-  
+      
 
 plot_predictions
 ```
